@@ -113,6 +113,7 @@ deno_core::extension!(deno_web,
     "15_performance.js",
     "16_image_data.js",
   ],
+  lazy_loaded_esm = [ "webtransport.js" ],
   options = {
     blob_store: Arc<BlobStore>,
     maybe_location: Option<Url>,
@@ -126,20 +127,27 @@ deno_core::extension!(deno_web,
   }
 );
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, deno_error::JsError)]
 pub enum WebError {
+  #[class("DOMExceptionInvalidCharacterError")]
   #[error("Failed to decode base64")]
   Base64Decode,
+  #[class(range)]
   #[error("The encoding label provided ('{0}') is invalid.")]
   InvalidEncodingLabel(String),
+  #[class(type)]
   #[error("buffer exceeds maximum length")]
   BufferTooLong,
+  #[class(range)]
   #[error("Value too large to decode")]
   ValueTooLarge,
+  #[class(range)]
   #[error("Provided buffer too small")]
   BufferTooSmall,
+  #[class(type)]
   #[error("The encoded data is not valid")]
   DataInvalid,
+  #[class(generic)]
   #[error(transparent)]
   DataError(#[from] v8::DataError),
 }
@@ -349,6 +357,7 @@ struct TextDecoderResource {
 impl deno_core::GarbageCollected for TextDecoderResource {}
 
 #[op2(fast(op_encoding_encode_into_fast))]
+#[allow(deprecated)]
 fn op_encoding_encode_into(
   scope: &mut v8::HandleScope,
   input: v8::Local<v8::Value>,
